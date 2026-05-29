@@ -130,6 +130,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .close-btn{width:32px;height:32px;border-radius:50%;background:var(--bg);border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:auto;color:var(--muted)}
 .close-btn:hover{background:#e0e0e0}
 
+/* ── AMAZON RESULTS ── */
+.amz-section{padding:16px 20px;border-top:1px solid var(--border)}
+.amz-section h4{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.amz-loading{font-size:13px;color:var(--hint);padding:8px 0}
+.amz-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.amz-item:last-child{border:none;padding-bottom:0}
+.amz-thumb{width:60px;height:60px;object-fit:contain;border-radius:6px;background:#f9f9f9;flex-shrink:0}
+.amz-info{flex:1;min-width:0}
+.amz-title{font-size:12px;line-height:1.35;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:4px}
+.amz-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.amz-price{font-size:14px;font-weight:700;color:var(--green)}
+.amz-rating{font-size:11px;color:var(--amber)}
+.amz-sales{font-size:11px;color:var(--muted)}
+.amz-btn{margin-top:4px;display:inline-block;padding:4px 10px;background:var(--orange);color:#131921;font-size:11px;font-weight:700;border-radius:5px;text-decoration:none}
+.amz-kw{font-size:11px;color:var(--hint);margin-top:6px;font-style:italic}
+.amz-btn-search{width:100%;padding:10px;background:var(--orange);color:#131921;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;transition:background .15s}
+.amz-btn-search:hover{background:var(--orange-dark)}
 /* ── EMPTY / LOAD ── */
 .loading{display:flex;align-items:center;justify-content:center;min-height:300px;font-size:14px;color:var(--hint)}
 .empty-state{text-align:center;padding:60px 20px;color:var(--hint)}
@@ -435,13 +452,61 @@ function openModal(id) {
       ${p.descricao ? `<div class="modal-desc">${esc(p.descricao)}</div>` : ''}
       ${p.keywords?.length ? `<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px">Palavras-chave</div><div class="modal-kws">${p.keywords.map(k=>`<span class="modal-kw">${esc(k)}</span>`).join('')}</div></div>` : ''}
     </div>
+    <div class="amz-section" id="amz-panel-${p.id}">
+      <h4>🛒 Pesquisa Amazon ao vivo</h4>
+      <button class="amz-btn-search" onclick="buscarAmazon(${p.id})">🔍 Buscar preços e avaliações agora</button>
+      <div id="amz-results-${p.id}"></div>
+    </div>
     <div class="modal-actions">
-      ${p.link_mais_vendido ? `<a class="modal-btn primary" href="${esc(p.link_mais_vendido)}" target="_blank" rel="noopener">🛒 Ver produto na Amazon</a>` : ''}
-      <a class="modal-btn ${p.link_mais_vendido?'ghost':'primary'}" href="${esc(amazonLink)}" target="_blank" rel="noopener">${p.link_mais_vendido ? '🔍 Buscar na Amazon' : '🔍 Buscar na Amazon'}</a>
+      ${p.link_mais_vendido ? `<a class="modal-btn primary" href="${esc(p.link_mais_vendido)}" target="_blank" rel="noopener">🛒 Ver na Amazon</a>` : ''}
+      <a class="modal-btn ${p.link_mais_vendido?'ghost':'primary'}" href="${esc(amazonLink)}" target="_blank" rel="noopener">🔍 Abrir busca Amazon</a>
     </div>`;
 
   document.getElementById('modal').classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+const SERP_KEY = '83e941757b8ad3cdb47ecc3edb7d0762ac2c9d47147978dcb093294c8f581b09';
+
+async function buscarAmazon(prodId) {
+  const p = allProds.find(x=>x.id===prodId);
+  if (!p) return;
+  const kw = (p.keywords||[])[0] || p.nome;
+  const el = document.getElementById(`amz-results-${prodId}`);
+  if (!el) return;
+  el.innerHTML = '<div class="amz-loading">⏳ Buscando na Amazon Brasil...</div>';
+
+  const url = `https://serpapi.com/search.json?engine=amazon&amazon_domain=amazon.com.br&k=${encodeURIComponent(kw)}&api_key=${SERP_KEY}`;
+  try {
+    const r    = await fetch(url);
+    const data = await r.json();
+    if (data.error) { el.innerHTML = `<div class="amz-loading" style="color:var(--red)">Erro: ${esc(data.error)}</div>`; return; }
+    const results = (data.organic_results || data.results || []).slice(0, 5);
+    if (!results.length) { el.innerHTML = '<div class="amz-loading">Sem resultados.</div>'; return; }
+    el.innerHTML = `<div class="amz-kw">Buscado: "${esc(kw)}" · ignore os 4 primeiros (patrocinados)</div>`
+      + results.map(r => {
+        const price  = r.price || r.extracted_price || '';
+        const rating = r.rating ? `⭐ ${r.rating} (${r.reviews_count||r.reviews||''})` : '';
+        const sales  = r.bought_in_past_month || r.sales_volume || '';
+        const thumb  = r.thumbnail || r.image || '';
+        const link   = r.link || r.url || '#';
+        const title  = r.title || '';
+        return `<div class="amz-item">
+          ${thumb ? `<img class="amz-thumb" src="${esc(thumb)}" alt="" onerror="this.style.display='none'">` : ''}
+          <div class="amz-info">
+            <div class="amz-title">${esc(title)}</div>
+            <div class="amz-meta">
+              ${price ? `<span class="amz-price">${esc(String(price))}</span>` : ''}
+              ${rating ? `<span class="amz-rating">${esc(rating)}</span>` : ''}
+              ${sales ? `<span class="amz-sales">🛒 ${esc(String(sales))}/mês</span>` : ''}
+            </div>
+            <a class="amz-btn" href="${esc(link)}" target="_blank" rel="noopener">↗ Abrir</a>
+          </div>
+        </div>`;
+      }).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="amz-loading" style="color:var(--red)">Erro de conexão: ${esc(e.message)}</div>`;
+  }
 }
 
 function closeModal() {
