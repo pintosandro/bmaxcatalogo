@@ -401,8 +401,9 @@ function cardHtml(p) {
       <div class="prod-name">${esc(p.nome)}</div>
       <div class="prod-price${priceTxt?'':' no-price'}">${priceTxt||'Consulte preço'}${priceTxt&&p.vendas_mes?`<span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px">${esc(p.vendas_mes)}+ /mês</span>`:''}</div>
       ${kws ? `<div class="prod-kws">${kws}</div>` : ''}
-      <div class="prod-btn">
-        <a class="${btnCls}" href="${esc(amazonLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${btnLabel}</a>
+      <div class="prod-btn" style="display:flex;gap:5px">
+        <a class="${btnCls}" href="${esc(amazonLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="flex:1">${btnLabel}</a>
+        ${p.tem_foto ? `<a href="https://www.google.com/searchbyimage?image_url=${encodeURIComponent('https://pintosandro.github.io/bmaxcatalogo/fotos/'+p.id+'.jpg')}&q=site:amazon.com.br" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="btn-amazon-ghost" style="flex-shrink:0;padding:8px 10px;font-size:14px" title="Buscar esta imagem na Amazon via Google Lens">🔍</a>` : ''}
       </div>
     </div>
   </div>`;
@@ -460,7 +461,8 @@ function openModal(id) {
     </div>
     <div class="modal-actions">
       ${p.link_mais_vendido ? `<a class="modal-btn primary" href="${esc(p.link_mais_vendido)}" target="_blank" rel="noopener">🛒 Ver na Amazon</a>` : ''}
-      <a class="modal-btn ${p.link_mais_vendido?'ghost':'primary'}" href="${esc(amazonLink)}" target="_blank" rel="noopener">🔍 Abrir busca Amazon</a>
+      <a class="modal-btn ghost" href="${esc(amazonLink)}" target="_blank" rel="noopener">🔍 Buscar Amazon</a>
+      ${p.tem_foto ? `<a class="modal-btn ghost" href="https://www.google.com/searchbyimage?image_url=${encodeURIComponent('https://pintosandro.github.io/bmaxcatalogo/fotos/'+p.id+'.jpg')}&q=site:amazon.com.br" target="_blank" rel="noopener" style="flex-shrink:0">🔍 Lens → Amazon</a>` : ''}
     </div>`;
 
   document.getElementById('modal').classList.add('open');
