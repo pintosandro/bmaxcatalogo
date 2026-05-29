@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B-MAX — Catálogo de Produtos</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f5;--surface:#fff;--border:#e0e0e0;
+  --text:#1a1a1a;--muted:#666;--hint:#aaa;
+  --orange:#FF9900;--orange-dark:#e68900;
+  --green:#1a6b4a;--green-bg:#e8f5ee;
+  --amber:#b36b00;--amber-bg:#fff3dc;
+  --red:#c0392b;--red-bg:#fdecea;
+  --r:10px;--shadow:0 2px 8px rgba(0,0,0,.08);
+  --shadow-hover:0 6px 24px rgba(0,0,0,.14);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── HEADER ── */
+.header{background:#131921;color:#fff;padding:0 24px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.header-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:16px;height:60px}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0}
+.logo-box{width:34px;height:34px;background:var(--orange);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#131921}
+.logo-name{color:#fff;font-size:17px;font-weight:700;letter-spacing:-.02em}
+.logo-sub{color:#ccc;font-size:11px;font-weight:400}
+.search-bar{flex:1;max-width:620px;display:flex;background:#fff;border-radius:8px;overflow:hidden;border:2px solid transparent;transition:border-color .15s}
+.search-bar:focus-within{border-color:var(--orange)}
+.search-bar input{flex:1;padding:9px 14px;border:none;outline:none;font-size:14px;color:var(--text)}
+.search-bar button{padding:0 18px;background:var(--orange);border:none;cursor:pointer;font-size:16px;transition:background .15s}
+.search-bar button:hover{background:var(--orange-dark)}
+.header-count{color:#ccc;font-size:12px;flex-shrink:0;white-space:nowrap}
+
+/* ── BANNER ── */
+.banner{background:linear-gradient(135deg,#131921 0%,#1e2d40 100%);padding:32px 24px;text-align:center;color:#fff}
+.banner h1{font-size:clamp(22px,4vw,36px);font-weight:700;margin-bottom:6px}
+.banner p{color:#aab;font-size:14px}
+.banner-stats{display:flex;justify-content:center;gap:32px;margin-top:20px;flex-wrap:wrap}
+.bstat{text-align:center}
+.bstat-val{font-size:28px;font-weight:700;color:var(--orange);font-family:'SF Mono',monospace}
+.bstat-lbl{font-size:11px;color:#88a;text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+
+/* ── TOOLBAR ── */
+.toolbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;position:sticky;top:60px;z-index:90;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.toolbar-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.filter-chips{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.chip{padding:6px 14px;border-radius:99px;border:1.5px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;color:var(--muted)}
+.chip:hover{border-color:var(--orange);color:var(--orange)}
+.chip.active{background:var(--orange);border-color:var(--orange);color:#fff}
+.chip.high{color:var(--green)}
+.chip.high.active{background:var(--green);border-color:var(--green);color:#fff}
+.chip.mid{color:var(--amber)}
+.chip.mid.active{background:var(--amber);border-color:var(--amber);color:#fff}
+.chip.low{color:var(--red)}
+.chip.low.active{background:var(--red);border-color:var(--red);color:#fff}
+.sort-sel{padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);cursor:pointer;outline:none}
+.rcount{font-size:12px;color:var(--hint);white-space:nowrap}
+
+/* ── MAIN LAYOUT ── */
+.main{max-width:1400px;margin:0 auto;padding:20px 24px;display:flex;gap:20px;align-items:flex-start}
+.sidebar{width:220px;flex-shrink:0;position:sticky;top:130px}
+.sidebar h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+.cat-list{display:flex;flex-direction:column;gap:2px}
+.cat-item{padding:7px 10px;border-radius:7px;font-size:13px;cursor:pointer;transition:background .12s;display:flex;justify-content:space-between;align-items:center}
+.cat-item:hover{background:#f0f0f0}
+.cat-item.active{background:var(--orange);color:#fff;font-weight:600}
+.cat-item.active .cat-count{color:rgba(255,255,255,.7)}
+.cat-count{font-size:11px;color:var(--hint);font-family:monospace}
+
+/* ── GRID ── */
+.grid-wrap{flex:1;min-width:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.prod-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:all .2s;cursor:pointer;display:flex;flex-direction:column;text-decoration:none;color:inherit}
+.prod-card:hover{box-shadow:var(--shadow-hover);transform:translateY(-3px);border-color:transparent}
+.prod-img-wrap{position:relative;background:#f9f9f9;aspect-ratio:1;overflow:hidden;flex-shrink:0}
+.prod-img{width:100%;height:100%;object-fit:contain;padding:10px;transition:transform .3s}
+.prod-card:hover .prod-img{transform:scale(1.06)}
+.prod-badge{position:absolute;top:8px;left:8px;padding:3px 8px;border-radius:99px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.badge-high{background:var(--green-bg);color:var(--green)}
+.badge-mid{background:var(--amber-bg);color:var(--amber)}
+.badge-low{background:var(--red-bg);color:var(--red)}
+.prod-score{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:monospace}
+.score-high{background:var(--green);color:#fff}
+.score-mid{background:var(--amber);color:#fff}
+.score-low{background:var(--red);color:#fff}
+.trend-tag{position:absolute;bottom:8px;right:8px;font-size:11px;font-weight:700;padding:2px 6px;border-radius:5px}
+.trend-up{background:#d4f7e8;color:var(--green)}
+.trend-down{background:var(--red-bg);color:var(--red)}
+.trend-flat{background:#f0f0f0;color:#888}
+.prod-info{padding:12px;flex:1;display:flex;flex-direction:column;gap:5px}
+.prod-cat{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.prod-name{font-size:13px;font-weight:500;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text)}
+.prod-price{font-size:16px;font-weight:700;color:var(--green);margin-top:2px}
+.prod-price.no-price{font-size:12px;color:var(--hint);font-weight:400}
+.prod-vendas{font-size:11px;color:var(--muted)}
+.prod-kws{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
+.prod-kw{font-size:10px;padding:1px 6px;border-radius:99px;border:1px solid var(--border);color:var(--muted);background:#fafafa}
+.prod-btn{margin-top:auto;padding-top:10px}
+.btn-amazon{display:block;width:100%;padding:8px;background:var(--orange);color:#131921;font-weight:700;font-size:12px;text-align:center;border-radius:7px;text-decoration:none;transition:background .15s}
+.btn-amazon:hover{background:var(--orange-dark)}
+.btn-amazon-ghost{display:block;width:100%;padding:8px;background:transparent;color:var(--orange);font-weight:700;font-size:12px;text-align:center;border-radius:7px;text-decoration:none;border:1.5px solid var(--orange);transition:all .15s}
+.btn-amazon-ghost:hover{background:var(--orange);color:#131921}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:16px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-header{display:flex;gap:16px;padding:20px;border-bottom:1px solid var(--border);align-items:flex-start}
+.modal-img{width:140px;height:140px;object-fit:contain;border-radius:10px;background:#f9f9f9;padding:8px;flex-shrink:0}
+.modal-titles{flex:1;min-width:0}
+.modal-cat{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px}
+.modal-name{font-size:17px;font-weight:600;line-height:1.35;margin-bottom:8px}
+.modal-price-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.modal-price{font-size:22px;font-weight:700;color:var(--green)}
+.modal-body{padding:20px;display:flex;flex-direction:column;gap:14px}
+.modal-row{display:flex;gap:10px;flex-wrap:wrap}
+.modal-stat{flex:1;min-width:120px;padding:10px 12px;background:var(--bg);border-radius:8px}
+.modal-stat-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:3px}
+.modal-stat-val{font-size:14px;font-weight:600}
+.modal-desc{font-size:13px;line-height:1.6;color:var(--muted)}
+.modal-kws{display:flex;flex-wrap:wrap;gap:5px}
+.modal-kw{font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid var(--border);color:var(--muted)}
+.modal-actions{display:flex;gap:10px;padding:20px;border-top:1px solid var(--border)}
+.modal-btn{flex:1;padding:12px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;text-decoration:none;cursor:pointer;border:none;transition:all .15s}
+.modal-btn.primary{background:var(--orange);color:#131921}
+.modal-btn.primary:hover{background:var(--orange-dark)}
+.modal-btn.ghost{background:transparent;border:1.5px solid var(--border);color:var(--muted)}
+.modal-btn.ghost:hover{border-color:var(--orange);color:var(--orange)}
+.close-btn{width:32px;height:32px;border-radius:50%;background:var(--bg);border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:auto;color:var(--muted)}
+.close-btn:hover{background:#e0e0e0}
+
+/* ── EMPTY / LOAD ── */
+.loading{display:flex;align-items:center;justify-content:center;min-height:300px;font-size:14px;color:var(--hint)}
+.empty-state{text-align:center;padding:60px 20px;color:var(--hint)}
+.empty-state svg{width:64px;height:64px;stroke:var(--hint);fill:none;margin-bottom:16px;opacity:.4}
+.empty-state p{font-size:14px;line-height:1.6}
+.load-more{display:block;width:100%;max-width:300px;margin:24px auto;padding:12px;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--text)}
+.load-more:hover{border-color:var(--orange);color:var(--orange)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .main{flex-direction:column}
+  .sidebar{width:100%;position:static}
+  .cat-list{flex-direction:row;flex-wrap:wrap}
+  .cat-item{padding:5px 10px;border-radius:99px;border:1px solid var(--border)}
+  .cat-item.active{background:var(--orange);border-color:var(--orange);color:#fff}
+}
+@media(max-width:600px){
+  .header-count{display:none}
+  .banner-stats{gap:20px}
+  .bstat-val{font-size:22px}
+  .grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .main{padding:12px}
+  .toolbar{padding:10px 12px}
+  .filter-chips{gap:4px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-box">B</div>
+      <div>
+        <div class="logo-name">B-MAX</div>
+        <div class="logo-sub">Catálogo</div>
+      </div>
+    </a>
+    <div class="search-bar">
+      <input type="text" id="search" placeholder="Buscar produtos, marcas, categorias..." oninput="renderGrid()">
+      <button>🔍</button>
+    </div>
+    <span class="header-count" id="header-count">Carregando...</span>
+  </div>
+</header>
+
+<!-- BANNER -->
+<div class="banner">
+  <h1>Catálogo de Produtos B-MAX</h1>
+  <p>Produtos selecionados e analisados para venda na Amazon Brasil</p>
+  <div class="banner-stats">
+    <div class="bstat"><div class="bstat-val" id="st-total">—</div><div class="bstat-lbl">Produtos</div></div>
+    <div class="bstat"><div class="bstat-val" id="st-high">—</div><div class="bstat-lbl">Alta demanda</div></div>
+    <div class="bstat"><div class="bstat-val" id="st-mid">—</div><div class="bstat-lbl">Média demanda</div></div>
+    <div class="bstat"><div class="bstat-val" id="st-cats">—</div><div class="bstat-lbl">Categorias</div></div>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <div class="filter-chips">
+      <button class="chip active" data-filter="all" onclick="setFilter('all')">Todos</button>
+      <button class="chip high" data-filter="high" onclick="setFilter('high')">🔥 Alta demanda</button>
+      <button class="chip mid"  data-filter="mid"  onclick="setFilter('mid')">📊 Média demanda</button>
+      <button class="chip low"  data-filter="low"  onclick="setFilter('low')">📉 Baixa demanda</button>
+    </div>
+    <select class="sort-sel" id="sortSel" onchange="renderGrid()">
+      <option value="score">Maior procura</option>
+      <option value="price_asc">Menor preço</option>
+      <option value="price_desc">Maior preço</option>
+      <option value="name">A–Z</option>
+    </select>
+    <span class="rcount" id="rcount"></span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- SIDEBAR CATEGORIAS -->
+  <aside class="sidebar">
+    <h3>Categorias</h3>
+    <div class="cat-list" id="cat-list"></div>
+  </aside>
+
+  <!-- GRID -->
+  <div class="grid-wrap">
+    <div class="grid" id="grid">
+      <div class="loading">Carregando produtos...</div>
+    </div>
+    <button class="load-more" id="load-more" style="display:none" onclick="loadMore()">Carregar mais produtos</button>
+  </div>
+</div>
+
+<!-- MODAL PRODUTO -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-inner"></div>
+</div>
+
+<script>
+let allProds = [], filtered = [], currentCat = 'all', currentFilter = 'all', PAGE = 40, shown = 40;
+
+async function init() {
+  try {
+    const r  = await fetch('produtos.json');
+    allProds = await r.json();
+  } catch(e) {
+    document.getElementById('grid').innerHTML = '<div class="empty-state"><p>Erro ao carregar produtos.json<br><small>'+e.message+'</small></p></div>';
+    return;
+  }
+
+  // Stats
+  document.getElementById('st-total').textContent = allProds.length;
+  document.getElementById('st-high').textContent  = allProds.filter(p=>p.demand_level==='high').length;
+  document.getElementById('st-mid').textContent   = allProds.filter(p=>p.demand_level==='mid').length;
+  const cats = [...new Set(allProds.map(p=>p.categoria).filter(Boolean))];
+  document.getElementById('st-cats').textContent  = cats.length;
+
+  buildCats(cats);
+  renderGrid();
+}
+
+function buildCats(cats) {
+  const counts = {};
+  allProds.forEach(p=>{ if(p.categoria) counts[p.categoria]=(counts[p.categoria]||0)+1; });
+  const sorted = cats.sort((a,b)=>(counts[b]||0)-(counts[a]||0));
+  const el = document.getElementById('cat-list');
+  const total = allProds.length;
+  el.innerHTML = `<div class="cat-item active" data-cat="all" onclick="setCat('all')"><span>Todas</span><span class="cat-count">${total}</span></div>`
+    + sorted.map(c=>`<div class="cat-item" data-cat="${esc(c)}" onclick="setCat('${esc(c)}')">${esc(c)}<span class="cat-count">${counts[c]}</span></div>`).join('');
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  shown = PAGE;
+  document.querySelectorAll('.chip').forEach(c=>{
+    c.classList.toggle('active', c.dataset.filter === f);
+  });
+  renderGrid();
+}
+
+function setCat(cat) {
+  currentCat = cat;
+  shown = PAGE;
+  document.querySelectorAll('.cat-item').forEach(c=>{
+    c.classList.toggle('active', c.dataset.cat === cat);
+  });
+  renderGrid();
+}
+
+function getPrice(p) {
+  const s = p.preco_venda || p.preco_menor || p.preco_hint || '';
+  const n = parseFloat(s.toString().replace(/[R$\s]/g,'').replace(/\./g,'').replace(',','.'));
+  return isNaN(n) ? 0 : n;
+}
+
+function formatPrice(p) {
+  const v = getPrice(p);
+  if (!v) return null;
+  return 'R$ ' + v.toFixed(2).replace('.',',');
+}
+
+function renderGrid() {
+  const q  = document.getElementById('search').value.toLowerCase().trim();
+  const sort = document.getElementById('sortSel').value;
+
+  filtered = allProds.filter(p => {
+    if (currentFilter !== 'all' && p.demand_level !== currentFilter) return false;
+    if (currentCat !== 'all' && p.categoria !== currentCat) return false;
+    if (q) {
+      const hay = (p.nome+' '+p.categoria+' '+(p.keywords||[]).join(' ')+' '+p.descricao).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  if (sort === 'score')      filtered.sort((a,b) => (b.score||0) - (a.score||0));
+  else if (sort === 'name')  filtered.sort((a,b) => a.nome.localeCompare(b.nome,'pt'));
+  else if (sort === 'price_asc')  filtered.sort((a,b) => getPrice(a) - getPrice(b));
+  else if (sort === 'price_desc') filtered.sort((a,b) => getPrice(b) - getPrice(a));
+
+  shown = PAGE;
+  renderCards();
+  document.getElementById('rcount').textContent = filtered.length + ' produto' + (filtered.length!==1?'s':'');
+  document.getElementById('header-count').textContent = filtered.length + ' produtos';
+}
+
+function renderCards() {
+  const grid = document.getElementById('grid');
+  const lm   = document.getElementById('load-more');
+  const slice = filtered.slice(0, shown);
+
+  if (!slice.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <p>Nenhum produto encontrado.<br>Tente outros filtros ou termos de busca.</p>
+    </div>`;
+    lm.style.display = 'none';
+    return;
+  }
+
+  grid.innerHTML = slice.map(p => cardHtml(p)).join('');
+  lm.style.display = shown < filtered.length ? 'block' : 'none';
+  lm.textContent = `Carregar mais (${filtered.length - shown} restantes)`;
+}
+
+function loadMore() { shown += PAGE; renderCards(); }
+
+function cardHtml(p) {
+  const badgeMap = { high:['🔥 Alta','badge-high'], mid:['📊 Média','badge-mid'], low:['📉 Baixa','badge-low'] };
+  const [badgeTxt, badgeCls] = badgeMap[p.demand_level] || ['—','badge-low'];
+  const sc   = Math.min(100, Math.max(0, parseInt(p.score)||0));
+  const scCls = sc >= 60 ? 'score-high' : sc >= 30 ? 'score-mid' : 'score-low';
+  const priceTxt = formatPrice(p);
+  const imgSrc   = p.tem_foto ? `fotos/${p.id}.jpg` : '';
+  const kws = (p.keywords||[]).slice(0,3).map(k=>`<span class="prod-kw">${esc(k)}</span>`).join('');
+  const trend = p.trends_interest != null ? (() => {
+    const d = p.trends_direction;
+    if (d==='rising')  return `<span class="trend-tag trend-up">↑ ${p.trends_interest}</span>`;
+    if (d==='falling') return `<span class="trend-tag trend-down">↓ ${p.trends_interest}</span>`;
+    return `<span class="trend-tag trend-flat">→ ${p.trends_interest}</span>`;
+  })() : '';
+
+  const amazonLink = p.link_busca || p.link_mais_vendido ||
+    `https://www.amazon.com.br/s?k=${encodeURIComponent((p.keywords||[])[0]||p.nome)}`;
+  const btnLabel = p.link_mais_vendido ? '🛒 Ver na Amazon' : '🔍 Buscar na Amazon';
+  const btnCls   = p.link_mais_vendido ? 'btn-amazon' : 'btn-amazon-ghost';
+
+  return `<div class="prod-card" onclick="openModal(${p.id})">
+    <div class="prod-img-wrap">
+      ${imgSrc ? `<img class="prod-img" src="${imgSrc}" alt="${esc(p.nome)}" loading="lazy" onerror="this.src='';this.closest('.prod-img-wrap').style.background='#f0f0f0'">` : '<div style="width:100%;height:100%;background:#f0ede8;display:flex;align-items:center;justify-content:center;font-size:32px">📦</div>'}
+      <span class="prod-badge ${badgeCls}">${badgeTxt}</span>
+      <span class="prod-score ${scCls}">${sc}</span>
+      ${trend}
+    </div>
+    <div class="prod-info">
+      <div class="prod-cat">${esc(p.categoria||p.secao||'')}</div>
+      <div class="prod-name">${esc(p.nome)}</div>
+      ${priceTxt ? `<div class="prod-price">${priceTxt}${p.vendas_mes?`<span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px">${esc(p.vendas_mes)}+ /mês</span>`:''}` : '<div class="prod-price no-price">Consulte preço</div>'}
+      ${kws ? `<div class="prod-kws">${kws}</div>` : ''}
+      <div class="prod-btn">
+        <a class="${btnCls}" href="${esc(amazonLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${btnLabel}</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function openModal(id) {
+  const p = allProds.find(x=>x.id===id);
+  if (!p) return;
+  const badgeMap = { high:['🔥 Alta demanda','badge-high'], mid:['📊 Média','badge-mid'], low:['📉 Baixa','badge-low'] };
+  const [badgeTxt, badgeCls] = badgeMap[p.demand_level] || ['—','badge-low'];
+  const sc   = Math.min(100, Math.max(0, parseInt(p.score)||0));
+  const scCls = sc >= 60 ? 'score-high' : sc >= 30 ? 'score-mid' : 'score-low';
+  const imgSrc = p.tem_foto ? `fotos/${p.id}.jpg` : '';
+  const priceTxt = formatPrice(p);
+  const amazonLink = p.link_busca || p.link_mais_vendido ||
+    `https://www.amazon.com.br/s?k=${encodeURIComponent((p.keywords||[])[0]||p.nome)}`;
+
+  const trendHtml = p.trends_interest != null ? (() => {
+    const d = p.trends_direction;
+    const ico = d==='rising'?'↑ Em alta':d==='falling'?'↓ Caindo':'→ Estável';
+    const col = d==='rising'?'var(--green)':d==='falling'?'var(--red)':'var(--muted)';
+    return `<div class="modal-stat"><div class="modal-stat-lbl">Google Trends</div><div class="modal-stat-val" style="color:${col}">${ico} (${p.trends_interest}/100)</div></div>`;
+  })() : '';
+
+  document.getElementById('modal-inner').innerHTML = `
+    <div class="modal-header">
+      ${imgSrc ? `<img class="modal-img" src="${imgSrc}" alt="${esc(p.nome)}" onerror="this.style.display='none'">` : '<div class="modal-img" style="background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:48px">📦</div>'}
+      <div class="modal-titles">
+        <div class="modal-cat">${esc(p.categoria||p.secao||'Geral')}</div>
+        <div class="modal-name">${esc(p.nome)}</div>
+        <div class="modal-price-row">
+          ${priceTxt ? `<div class="modal-price">${priceTxt}</div>` : ''}
+          ${p.vendas_mes ? `<span style="font-size:12px;color:var(--muted)">🛒 ${esc(p.vendas_mes)}+ compras/mês</span>` : ''}
+        </div>
+        <div style="margin-top:8px;display:flex;gap:6px;align-items:center">
+          <span class="prod-badge ${badgeCls}" style="position:static">${badgeTxt}</span>
+          <span class="prod-score ${scCls}" style="position:static;width:auto;height:auto;border-radius:99px;padding:2px 8px">Score ${sc}</span>
+        </div>
+      </div>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-row">
+        ${p.preco_venda ? `<div class="modal-stat"><div class="modal-stat-lbl">Preço de venda</div><div class="modal-stat-val" style="color:var(--green)">${esc(p.preco_venda)}</div></div>` : ''}
+        ${p.preco_menor ? `<div class="modal-stat"><div class="modal-stat-lbl">Menor preço 1ª pág.</div><div class="modal-stat-val" style="color:var(--amber)">${esc(p.preco_menor)}</div></div>` : ''}
+        ${trendHtml}
+      </div>
+      ${p.descricao ? `<div class="modal-desc">${esc(p.descricao)}</div>` : ''}
+      ${p.keywords?.length ? `<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px">Palavras-chave</div><div class="modal-kws">${p.keywords.map(k=>`<span class="modal-kw">${esc(k)}</span>`).join('')}</div></div>` : ''}
+    </div>
+    <div class="modal-actions">
+      ${p.link_mais_vendido ? `<a class="modal-btn primary" href="${esc(p.link_mais_vendido)}" target="_blank" rel="noopener">🛒 Ver produto na Amazon</a>` : ''}
+      <a class="modal-btn ${p.link_mais_vendido?'ghost':'primary'}" href="${esc(amazonLink)}" target="_blank" rel="noopener">${p.link_mais_vendido ? '🔍 Buscar na Amazon' : '🔍 Buscar na Amazon'}</a>
+    </div>`;
+
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+init();
+</script>
+</body>
+</html>
