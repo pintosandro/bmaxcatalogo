@@ -233,6 +233,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <script>
 let allProds = [], filtered = [], currentCat = 'all', currentFilter = 'all', PAGE = 40, shown = 40;
 
+// Retorna apenas o primeiro nível da categoria hierárquica
+function topCat(cat) {
+  if (!cat) return '';
+  return cat.split('>')[0].trim();
+}
+// Retorna o último segmento (mais específico)
+function leafCat(cat) {
+  if (!cat) return '';
+  const parts = cat.split('>');
+  return parts[parts.length - 1].trim();
+}
+
 async function init() {
   try {
     const r  = await fetch('produtos.json');
@@ -242,25 +254,25 @@ async function init() {
     return;
   }
 
-  // Stats
+  // Stats usando top-level categories
   document.getElementById('st-total').textContent = allProds.length;
   document.getElementById('st-high').textContent  = allProds.filter(p=>p.demand_level==='high').length;
   document.getElementById('st-mid').textContent   = allProds.filter(p=>p.demand_level==='mid').length;
-  const cats = [...new Set(allProds.map(p=>p.categoria).filter(Boolean))];
-  document.getElementById('st-cats').textContent  = cats.length;
+  const topCats = [...new Set(allProds.map(p=>topCat(p.categoria)).filter(Boolean))];
+  document.getElementById('st-cats').textContent  = topCats.length;
 
-  buildCats(cats);
+  buildCats(topCats);
   renderGrid();
 }
 
-function buildCats(cats) {
+function buildCats(topCats) {
   const counts = {};
-  allProds.forEach(p=>{ if(p.categoria) counts[p.categoria]=(counts[p.categoria]||0)+1; });
-  const sorted = cats.sort((a,b)=>(counts[b]||0)-(counts[a]||0));
+  allProds.forEach(p=>{ const c = topCat(p.categoria); if(c) counts[c]=(counts[c]||0)+1; });
+  const sorted = topCats.sort((a,b)=>(counts[b]||0)-(counts[a]||0));
   const el = document.getElementById('cat-list');
   const total = allProds.length;
   el.innerHTML = `<div class="cat-item active" data-cat="all" onclick="setCat('all')"><span>Todas</span><span class="cat-count">${total}</span></div>`
-    + sorted.map(c=>`<div class="cat-item" data-cat="${esc(c)}" onclick="setCat('${esc(c)}')">${esc(c)}<span class="cat-count">${counts[c]}</span></div>`).join('');
+    + sorted.map(c=>`<div class="cat-item" data-cat="${esc(c)}" onclick="setCat('${esc(c)}')">${esc(c)}<span class="cat-count">${counts[c]||0}</span></div>`).join('');
 }
 
 function setFilter(f) {
@@ -299,7 +311,7 @@ function renderGrid() {
 
   filtered = allProds.filter(p => {
     if (currentFilter !== 'all' && p.demand_level !== currentFilter) return false;
-    if (currentCat !== 'all' && p.categoria !== currentCat) return false;
+    if (currentCat !== 'all' && topCat(p.categoria) !== currentCat) return false;
     if (q) {
       const hay = (p.nome+' '+p.categoria+' '+(p.keywords||[]).join(' ')+' '+p.descricao).toLowerCase();
       if (!hay.includes(q)) return false;
@@ -367,9 +379,9 @@ function cardHtml(p) {
       ${trend}
     </div>
     <div class="prod-info">
-      <div class="prod-cat">${esc(p.categoria||p.secao||'')}</div>
+      <div class="prod-cat">${esc(topCat(p.categoria)||p.secao||'')}</div>
       <div class="prod-name">${esc(p.nome)}</div>
-      ${priceTxt ? `<div class="prod-price">${priceTxt}${p.vendas_mes?`<span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px">${esc(p.vendas_mes)}+ /mês</span>`:''}` : '<div class="prod-price no-price">Consulte preço</div>'}
+      <div class="prod-price${priceTxt?'':' no-price'}">${priceTxt||'Consulte preço'}${priceTxt&&p.vendas_mes?`<span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px">${esc(p.vendas_mes)}+ /mês</span>`:''}</div>
       ${kws ? `<div class="prod-kws">${kws}</div>` : ''}
       <div class="prod-btn">
         <a class="${btnCls}" href="${esc(amazonLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${btnLabel}</a>
@@ -401,7 +413,7 @@ function openModal(id) {
     <div class="modal-header">
       ${imgSrc ? `<img class="modal-img" src="${imgSrc}" alt="${esc(p.nome)}" onerror="this.style.display='none'">` : '<div class="modal-img" style="background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:48px">📦</div>'}
       <div class="modal-titles">
-        <div class="modal-cat">${esc(p.categoria||p.secao||'Geral')}</div>
+        <div class="modal-cat">${esc(p.categoria ? p.categoria.split('>').map(s=>s.trim()).join(' › ') : p.secao||'Geral')}</div>
         <div class="modal-name">${esc(p.nome)}</div>
         <div class="modal-price-row">
           ${priceTxt ? `<div class="modal-price">${priceTxt}</div>` : ''}
